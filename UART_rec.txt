@@ -1,0 +1,54 @@
+module uart_rx_simple(
+    input clk,
+    input rst,
+    input rxd,
+    output reg [7:0] rx_data,
+    output reg rx_valid
+);
+
+parameter PRESCALE = 5208;
+
+reg [12:0] baud_cnt;
+reg [3:0] bit_cnt;
+reg [7:0] shift_reg;
+reg rx_busy;
+
+always @(posedge clk or posedge rst) begin
+    if (rst) begin
+        rx_busy <= 0;
+        rx_valid <= 0;
+        baud_cnt <= 0;
+        bit_cnt <= 0;
+    end
+
+    else begin
+        rx_valid <= 0;
+
+        if (!rx_busy && rxd == 0) begin
+            rx_busy <= 1;
+            baud_cnt <= 0;
+            bit_cnt <= 0;
+        end
+
+        else if (rx_busy) begin
+            if (baud_cnt == PRESCALE) begin
+                baud_cnt <= 0;
+
+                if (bit_cnt < 8)
+                    shift_reg[bit_cnt] <= rxd;
+
+                bit_cnt <= bit_cnt + 1;
+
+                if (bit_cnt == 8) begin
+                    rx_data <= shift_reg;
+                    rx_valid <= 1;
+                    rx_busy <= 0;
+                end
+            end
+            else
+                baud_cnt <= baud_cnt + 1;
+        end
+    end
+end
+
+endmodule

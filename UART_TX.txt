@@ -1,0 +1,48 @@
+module uart_tx_simple(
+    input clk,
+    input rst,
+    input tx_start,
+    input [7:0] data_in,
+    output reg txd,
+    output reg tx_busy
+);
+
+parameter PRESCALE = 5208;
+
+reg [12:0] baud_cnt;
+reg [3:0] bit_cnt;
+reg [9:0] shift_reg;
+
+always @(posedge clk or posedge rst) begin
+    if (rst) begin
+        txd <= 1'b1;
+        tx_busy <= 0;
+        baud_cnt <= 0;
+        bit_cnt <= 0;
+    end
+
+    else begin
+        if (tx_start && !tx_busy) begin
+            tx_busy <= 1;
+            shift_reg <= {1'b1, data_in, 1'b0}; // stop + data + start
+            bit_cnt <= 0;
+            baud_cnt <= 0;
+        end
+
+        else if (tx_busy) begin
+            if (baud_cnt == PRESCALE) begin
+                baud_cnt <= 0;
+                txd <= shift_reg[0];
+                shift_reg <= shift_reg >> 1;
+                bit_cnt <= bit_cnt + 1;
+
+                if (bit_cnt == 9)
+                    tx_busy <= 0;
+            end
+            else
+                baud_cnt <= baud_cnt + 1;
+        end
+    end
+end
+
+endmodule

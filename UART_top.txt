@@ -1,0 +1,36 @@
+module uart_top(
+
+    input clk,
+    input rst,
+    input tx_start,
+    input [7:0] tx_data,
+
+    output [7:0] rx_data,
+    output rx_valid
+);
+
+wire txd;
+wire tx_busy;
+
+uart_tx_simple tx_inst (
+
+    .clk(clk),
+    .rst(rst),
+    .tx_start(tx_start),
+    .data_in(tx_data),
+    .txd(txd),
+    .tx_busy(tx_busy)
+
+);
+
+uart_rx_simple rx_inst (
+
+    .clk(clk),
+    .rst(rst),
+    .rxd(txd),
+    .rx_data(rx_data),
+    .rx_valid(rx_valid)
+
+);
+
+endmodule
